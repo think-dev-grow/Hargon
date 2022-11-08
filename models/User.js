@@ -8,6 +8,7 @@ const UserSchema = new mongoose.Schema(
     contact: { type: String },
     dhid: { type: String },
     platform: { type: String, default: "Hargon" },
+    uid: { type: String },
   },
   { timestamps: true }
 );
