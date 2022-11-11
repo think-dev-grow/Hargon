@@ -21,7 +21,7 @@ const register = async (req, res, next) => {
     const check = await Users.findOne({ email: req.body.email });
 
     if (check?.platform === "Hargon")
-      return next(handleError(404, "User already exist."));
+      return next(handleError(404, "You already have an account here."));
 
     const salt = bcrypt.genSaltSync(10);
     const hash = bcrypt.hashSync(req.body.password, salt);
@@ -79,7 +79,7 @@ const login = async (req, res, next) => {
     const user = await Users.findOne({ uid });
 
     if (user.platform !== "Hargon") {
-      const { firstname, lastname, email, dhid, contact, uid } = user;
+      const { firstname, lastname, email, dhid, contact, uid, password } = user;
 
       const createUser = new Users({
         firstname,
@@ -88,12 +88,21 @@ const login = async (req, res, next) => {
         contact,
         dhid,
         uid,
+        password,
       });
 
       await createUser.save();
-    }
 
-    // res.send(user);
+      const confirmPassword = await bcrypt.compare(req.body.password, password);
+      if (!confirmPassword)
+        return next(handleError(400, "Password incorrect."));
+
+      res.status(200).json({
+        success: "true",
+        msg: "Login successfull",
+      });
+    } else {
+    }
   } catch (error) {
     console.log(error);
     next(handleError(500, "Oops , something went wrong."));
