@@ -9,6 +9,8 @@ const UserSchema = new mongoose.Schema(
     dhid: { type: String },
     platform: { type: String, default: "Hargon" },
     uid: { type: String },
+    password: { type: String },
+    isAdmin: { type: String, default: false },
   },
   { timestamps: true }
 );

@@ -22,6 +22,17 @@ const connectDB = () => {
 
 app.use("/Hargon/api", authRoute);
 
+app.use((err, req, res, next) => {
+  const status = err.status || 500;
+  const message = err.message || "Something went wrong";
+
+  return res.status(status).json({
+    success: false,
+    status,
+    message,
+  });
+});
+
 const PORT = 8800;
 
 app.listen(PORT, () => {
