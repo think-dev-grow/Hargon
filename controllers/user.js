@@ -1,27 +1,34 @@
 const Users = require("../models/User");
 const crypto = require("crypto");
+const bcrypt = require("bcrypt");
+const handleError = require("../utils/error");
 
 const { Random } = require("random-js");
 const random = new Random();
-const value = random.integer(10, 99);
 
 const randomize = require("randomatic");
-const int = randomize("0", 3);
 
 const rn = require("random-number");
+
 const options = {
   min: 100,
   max: 999,
   integer: true,
 };
-const digit = rn(options);
 
-const register = async (req, res) => {
+const register = async (req, res, next) => {
   try {
     const check = await Users.findOne({ email: req.body.email });
 
+    const salt = bcrypt.genSaltSync(10);
+    const hash = bcrypt.hashSync(req.body.password, salt);
+
+    if (check.platform === "Hargon")
+      return next(handleError(404, "User already exist."));
+
     if (check) {
-      const { firstname, lastname, email, dhid, contact, uid } = check;
+      const { firstname, lastname, email, dhid, contact, uid, password } =
+        check;
 
       const user = new Users({
         firstname,
@@ -30,6 +37,7 @@ const register = async (req, res) => {
         contact,
         dhid,
         uid,
+        password,
       });
 
       await user.save();
@@ -46,7 +54,8 @@ const register = async (req, res) => {
         email: req.body.email,
         contact: req.body.contact,
         dhid: crypto.randomBytes(64).toString("hex"),
-        uid: `40${value}${int}${digit}`,
+        uid: `40${rn(options)}${random.integer(10, 99)}${randomize("0", 3)}`,
+        password: hash,
       });
 
       await user.save();
@@ -58,9 +67,37 @@ const register = async (req, res) => {
       });
     }
   } catch (error) {
-    // res.status(500).json(error);
     console.log(error);
+    next(handleError(500, "Oops , something went wrong."));
   }
 };
 
-module.exports = { register };
+const login = async (req, res, next) => {
+  try {
+    const uid = req.body.uid;
+
+    const user = await Users.findOne({ uid });
+
+    if (user.platform !== "Hargon") {
+      const { firstname, lastname, email, dhid, contact, uid } = user;
+
+      const createUser = new Users({
+        firstname,
+        lastname,
+        email,
+        contact,
+        dhid,
+        uid,
+      });
+
+      await createUser.save();
+    }
+
+    // res.send(user);
+  } catch (error) {
+    console.log(error);
+    next(handleError(500, "Oops , something went wrong."));
+  }
+};
+
+module.exports = { register, login };
